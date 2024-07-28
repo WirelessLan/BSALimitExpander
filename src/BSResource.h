@@ -10,13 +10,13 @@ namespace  BSResource {
 			return file == other.file && ext == other.ext && dir == other.dir;
 		}
 
-		bool empty() {
+		bool empty() const {
 			return file == 0 && ext == 0 && dir == 0;
 		}
 	};
 
-	void InsertArchiveIndex(ID& a_id, std::uint32_t a_archIdx);
-	std::uint16_t FindArchiveIndex(ID& a_id);
+	void InsertArchiveIndex(const ID& a_id, std::uint32_t a_archIdx);
+	std::uint16_t FindArchiveIndex(const ID& a_id);
 
 	namespace Archive2 {
 		void Hooks_Index_AddDataFile();
@@ -25,6 +25,7 @@ namespace  BSResource {
 
 	namespace SDirectory2 {
 		void Hooks_Retrieve();
+		void Hooks_ReplicateDirTo();
 	}
 }
 

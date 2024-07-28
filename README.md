@@ -1,4 +1,4 @@
-# BSA Limit Expander
+# BSALimitExpander
 A plugin that increases the BSA file limit for Fallout 4
 
 ## Requirements

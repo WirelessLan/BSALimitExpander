@@ -11,13 +11,13 @@ namespace BSResource {
 
 	std::unordered_map<ID, std::uint16_t> g_idIndexMap;
 
-	void InsertArchiveIndex(ID& a_id, std::uint32_t a_archIdx) {
+	void InsertArchiveIndex(const ID& a_id, std::uint32_t a_archIdx) {
 		if (a_id.empty())
 			return;
 		g_idIndexMap[a_id] = static_cast<std::uint16_t>(a_archIdx);
 	}
 
-	std::uint16_t FindArchiveIndex(ID& a_id) {
+	std::uint16_t FindArchiveIndex(const ID& a_id) {
 		if (a_id.empty())
 			return static_cast<std::uint16_t>(-1);
 		auto it = g_idIndexMap.find(a_id);
@@ -288,6 +288,52 @@ namespace BSResource {
 				void* codeBuf = trampoline.allocate(p);
 				trampoline.write_branch<5>(target.address(), codeBuf);
 			}
+		}
+
+		void ReplicatedIDInsert(const ID& a_id, std::uint32_t a_repDir) {
+			std::uint16_t index = FindArchiveIndex(a_id);
+			if (index == static_cast<std::uint16_t>(-1))
+				return;
+
+			ID repId = a_id;
+			repId.dir = a_repDir;
+			InsertArchiveIndex(repId, index);
+		}
+
+		void Hooks_ReplicateDirTo() {
+			struct asm_code : Xbyak::CodeGenerator {
+				asm_code(std::uintptr_t a_targetAddr, std::uintptr_t a_funcAddr) {
+					Xbyak::Label retnLabel;
+					Xbyak::Label funcLabel;
+
+					push(rcx);
+					sub(rsp, 0x18);
+
+					lea(rcx, ptr[rdi]);
+					mov(edx, ebx);
+					call(ptr[rip + funcLabel]);
+
+					add(rsp, 0x18);
+					pop(rcx);
+
+					L("RET");
+					mov(ptr[rdi + 0x08], ebx);
+					mov(ptr[rbp - 0x48], ebx);
+					jmp(ptr[rip + retnLabel]);
+
+					L(retnLabel);
+					dq(a_targetAddr + 0x06);
+
+					L(funcLabel);
+					dq(a_funcAddr);
+				}
+			};
+
+			REL::Relocation<std::uintptr_t> target(REL::Offset(0x1B7249D));
+			asm_code p{ target.address(), (std::uintptr_t)ReplicatedIDInsert };
+			auto& trampoline = F4SE::GetTrampoline();
+			void* codeBuf = trampoline.allocate(p);
+			trampoline.write_branch<6>(target.address(), codeBuf);
 		}
 	}
 }

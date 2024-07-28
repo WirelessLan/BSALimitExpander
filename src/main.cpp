@@ -48,19 +48,23 @@ extern "C" DLLEXPORT bool F4SEAPI F4SEPlugin_Query(const F4SE::QueryInterface * 
 
 extern "C" DLLEXPORT bool F4SEAPI F4SEPlugin_Load(const F4SE::LoadInterface * a_f4se) {
 	F4SE::Init(a_f4se);
-	F4SE::AllocTrampoline(1 << 10u);
+	F4SE::AllocTrampoline(1 << 11u);
 
 	BSResource::Archive2::Hooks_Index_AddDataFile();
 	BSResource::Archive2::Hooks_Index_AddDataFromReader();
 	BSResource::SDirectory2::Hooks_Retrieve();
+	BSResource::SDirectory2::Hooks_ReplicateDirTo();
 
 	BSTextureIndex::Hooks_Index_AddDataFile();
 	BSTextureIndex::Overwrites_Instruction();
 
 	BSTextureStreamer::Manager::Hooks_ProcessEvent();
+	BSTextureStreamer::Manager::Hooks_DecompressStreamedLoad();
 	BSTextureStreamer::Manager::Hooks_StartStreamingChunks();
 	BSTextureStreamer::Manager::Hooks_BSGraphics_Renderer_CreateStreamingTexture();
 	BSTextureStreamer::Manager::Hooks_BSGraphics_CreateStreamingDDSTexture();
+	BSTextureStreamer::Manager::Hooks_1CB9AC2();
+	BSTextureStreamer::Manager::Hooks_ThreadProc();
 
 	return true;
 }
