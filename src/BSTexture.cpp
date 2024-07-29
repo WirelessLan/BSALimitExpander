@@ -173,43 +173,52 @@ namespace BSTextureStreamer {
 			}
 		}
 
-		void Hooks_DecompressStreamedLoad() {
+		void Hooks_LoadChunks() {
 			struct asm_code : Xbyak::CodeGenerator {
 				asm_code(std::uintptr_t a_target, std::uintptr_t a_funcAddr) {
 					Xbyak::Label retnLabel;
 					Xbyak::Label funcLabel;
 
 					push(rax);
+					push(rcx);
+					push(rdx);
+					push(r10);
+					push(r11);
 					sub(rsp, 0x10);
 
-					lea(rcx, ptr[r15]);
+					lea(rcx, ptr[rdx]);
 					call(ptr[rip + funcLabel]);
 
-					mov(ecx, eax);
+					mov(ebx, eax);
 
 					add(rsp, 0x10);
+					pop(r11);
+					pop(r10);
+					pop(rdx);
+					pop(rcx);
 					pop(rax);
 
-					cmp(ecx, 0xFFFF);
+					cmp(ebx, 0xFFFF);
 					jne("RET");
-					movzx(ecx, byte[r15 + 0x0C]);
+					movzx(ebx, byte[rdx + 0x0C]);
 
 					L("RET");
+					movzx(edi, byte[rdx + 0x0D]);
 					jmp(ptr[rip + retnLabel]);
 
 					L(retnLabel);
-					dq(a_target + 0x5);
+					dq(a_target + 0x8);
 
 					L(funcLabel);
 					dq(a_funcAddr);
 				}
 			};
 
-			REL::Relocation<std::uintptr_t> target(REL::Offset(0x1CB6262));
+			REL::Relocation<std::uintptr_t> target(REL::Offset(0x1CB7C07));
 			asm_code p{ target.address(), (std::uintptr_t)BSResource::FindArchiveIndex };
 			auto& trampoline = F4SE::GetTrampoline();
 			void* codeBuf = trampoline.allocate(p);
-			trampoline.write_branch<5>(target.address(), codeBuf);
+			trampoline.write_branch<6>(target.address(), codeBuf);
 		}
 
 		void Hooks_StartStreamingChunks() {
@@ -321,81 +330,6 @@ namespace BSTextureStreamer {
 			};
 
 			REL::Relocation<std::uintptr_t> target(REL::Offset(0x1D37BF5));
-			asm_code p{ target.address(), (std::uintptr_t)BSResource::FindArchiveIndex };
-			auto& trampoline = F4SE::GetTrampoline();
-			void* codeBuf = trampoline.allocate(p);
-			trampoline.write_branch<5>(target.address(), codeBuf);
-		}
-
-		void Hooks_1CB9AC2() {
-			struct asm_code : Xbyak::CodeGenerator {
-				asm_code(std::uintptr_t a_target, std::uintptr_t a_funcAddr) {
-					Xbyak::Label retnLabel;
-					Xbyak::Label funcLabel;
-
-					sub(rsp, 0x10);
-
-					lea(rcx, ptr[rsi]);
-					call(ptr[rip + funcLabel]);
-
-					movzx(ecx, ax);
-
-					add(rsp, 0x10);
-
-					cmp(ecx, 0xFFFF);
-					jne("RET");
-					movzx(ecx, byte[rsi + 0x0C]);
-
-					L("RET");
-					cmp(ecx, ptr[r14 + 0x00098DF0]);
-					jmp(ptr[rip + retnLabel]);
-
-					L(retnLabel);
-					dq(a_target + 0xB);
-
-					L(funcLabel);
-					dq(a_funcAddr);
-				}
-			};
-
-			REL::Relocation<std::uintptr_t> target(REL::Offset(0x1CB9AC2));
-			asm_code p{ target.address(), (std::uintptr_t)BSResource::FindArchiveIndex };
-			auto& trampoline = F4SE::GetTrampoline();
-			void* codeBuf = trampoline.allocate(p);
-			trampoline.write_branch<6>(target.address(), codeBuf);
-		}
-
-		void Hooks_ThreadProc() {
-			struct asm_code : Xbyak::CodeGenerator {
-				asm_code(std::uintptr_t a_target, std::uintptr_t a_funcAddr) {
-					Xbyak::Label retnLabel;
-					Xbyak::Label funcLabel;
-
-					sub(rsp, 0x10);
-
-					lea(rcx, ptr[rsi]);
-					call(ptr[rip + funcLabel]);
-
-					movzx(ecx, ax);
-
-					add(rsp, 0x10);
-
-					cmp(ecx, 0xFFFF);
-					jne("RET");
-					movzx(ecx, byte[r14 + 0x0C]);
-
-					L("RET");
-					jmp(ptr[rip + retnLabel]);
-
-					L(retnLabel);
-					dq(a_target + 0x5);
-
-					L(funcLabel);
-					dq(a_funcAddr);
-				}
-			};
-
-			REL::Relocation<std::uintptr_t> target(REL::Offset(0x1CBAACF));
 			asm_code p{ target.address(), (std::uintptr_t)BSResource::FindArchiveIndex };
 			auto& trampoline = F4SE::GetTrampoline();
 			void* codeBuf = trampoline.allocate(p);

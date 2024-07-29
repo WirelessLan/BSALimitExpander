@@ -1,12 +1,6 @@
 #pragma once
 
 namespace BSTextureIndex {
-	namespace Manager {
-		void Hooks_ProcessEvent();
-		void Hooks_DecompressStreamedLoad();
-		void Hooks_StartStreamingChunks();
-	}
-
 	class Index {
 		std::uint64_t	unk00;
 		void* unk08;
@@ -24,11 +18,9 @@ namespace BSTextureIndex {
 namespace BSTextureStreamer {
 	namespace Manager {
 		void Hooks_ProcessEvent();
-		void Hooks_DecompressStreamedLoad();
+		void Hooks_LoadChunks();
 		void Hooks_StartStreamingChunks();
 		void Hooks_BSGraphics_Renderer_CreateStreamingTexture();
 		void Hooks_BSGraphics_CreateStreamingDDSTexture();
-		void Hooks_1CB9AC2();
-		void Hooks_ThreadProc();
 	}
 }

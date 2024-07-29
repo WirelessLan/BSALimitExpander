@@ -1,6 +1,6 @@
 {
   "name": "bsalimitexpander",
-  "version-string": "0.0.2",
+  "version-string": "0.0.5",
   "license": "MIT",
   "dependencies": [
     "boost-stl-interfaces",
