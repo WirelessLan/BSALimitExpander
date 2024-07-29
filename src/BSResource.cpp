@@ -12,14 +12,10 @@ namespace BSResource {
 	std::unordered_map<ID, std::uint16_t> g_idIndexMap;
 
 	void InsertArchiveIndex(const ID& a_id, std::uint32_t a_archIdx) {
-		if (a_id.empty())
-			return;
 		g_idIndexMap[a_id] = static_cast<std::uint16_t>(a_archIdx);
 	}
 
 	std::uint16_t FindArchiveIndex(const ID& a_id) {
-		if (a_id.empty())
-			return static_cast<std::uint16_t>(-1);
 		auto it = g_idIndexMap.find(a_id);
 		if (it == g_idIndexMap.end())
 			return static_cast<std::uint16_t>(-1);
@@ -103,9 +99,6 @@ namespace BSResource {
 
 					mov(ptr[rsp + 0x4C], dil);
 
-					cmp(edi, 0x100);
-					jb("RET");
-
 					push(rcx);
 					push(rdx);
 
@@ -117,7 +110,6 @@ namespace BSResource {
 					pop(rdx);
 					pop(rcx);
 
-					L("RET");
 					jmp(ptr[rip + retnLabel]);
 
 					L(retnLabel);

@@ -98,9 +98,6 @@ namespace BSTextureStreamer {
 
 						mov(ptr[rsp + 0x5C], r12b);
 
-						cmp(r12d, 0x100);
-						jb("RET");
-
 						push(rcx);
 						push(rdx);
 
@@ -112,7 +109,6 @@ namespace BSTextureStreamer {
 						pop(rdx);
 						pop(rcx);
 
-						L("RET");
 						jmp(ptr[rip + retnLabel]);
 
 						L(retnLabel);
@@ -138,9 +134,6 @@ namespace BSTextureStreamer {
 						lea(rcx, ptr[rbp - 0x38]);
 						mov(rdx, rax);
 
-						cmp(r12d, 0x100);
-						jb("RET");
-
 						push(rcx);
 						push(rdx);
 						sub(rsp, 0x18);
@@ -154,7 +147,6 @@ namespace BSTextureStreamer {
 						pop(rdx);
 						pop(rcx);
 
-						L("RET");
 						jmp(ptr[rip + retnLabel]);
 
 						L(retnLabel);

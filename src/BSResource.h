@@ -9,10 +9,6 @@ namespace  BSResource {
 		bool operator==(const ID& other) const {
 			return file == other.file && ext == other.ext && dir == other.dir;
 		}
-
-		bool empty() const {
-			return file == 0 && ext == 0 && dir == 0;
-		}
 	};
 
 	void InsertArchiveIndex(const ID& a_id, std::uint32_t a_archIdx);
