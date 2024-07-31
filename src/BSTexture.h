@@ -22,5 +22,6 @@ namespace BSTextureStreamer {
 		void Hooks_StartStreamingChunks();
 		void Hooks_BSGraphics_Renderer_CreateStreamingTexture();
 		void Hooks_BSGraphics_CreateStreamingDDSTexture();
+		void Hooks_ThreadProc();
 	}
 }

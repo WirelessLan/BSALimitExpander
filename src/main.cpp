@@ -1,5 +1,6 @@
 #include "BSResource.h"
 #include "BSTexture.h"
+#include "BSScaleformImageLoader.h"
 
 extern "C" DLLEXPORT bool F4SEAPI F4SEPlugin_Query(const F4SE::QueryInterface * a_f4se, F4SE::PluginInfo * a_info) {
 #ifndef NDEBUG
@@ -64,6 +65,9 @@ extern "C" DLLEXPORT bool F4SEAPI F4SEPlugin_Load(const F4SE::LoadInterface * a_
 	BSTextureStreamer::Manager::Hooks_StartStreamingChunks();
 	BSTextureStreamer::Manager::Hooks_BSGraphics_Renderer_CreateStreamingTexture();
 	BSTextureStreamer::Manager::Hooks_BSGraphics_CreateStreamingDDSTexture();
+	BSTextureStreamer::Manager::Hooks_ThreadProc();
+
+	BSScaleformImageLoader::Hooks_LoadProtocolImage();
 
 	return true;
 }

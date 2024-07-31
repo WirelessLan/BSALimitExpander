@@ -327,5 +327,42 @@ namespace BSTextureStreamer {
 			void* codeBuf = trampoline.allocate(p);
 			trampoline.write_branch<5>(target.address(), codeBuf);
 		}
+
+		void Hooks_ThreadProc() {
+			struct asm_code : Xbyak::CodeGenerator {
+				asm_code(std::uintptr_t a_target, std::uintptr_t a_funcAddr) {
+					Xbyak::Label retnLabel;
+					Xbyak::Label funcLabel;
+
+					sub(rsp, 0x10);
+
+					lea(rcx, ptr[r14]);
+					call(ptr[rip + funcLabel]);
+
+					mov(ecx, eax);
+
+					add(rsp, 0x10);
+
+					cmp(ecx, 0xFFFF);
+					jne("RET");
+					movzx(ecx, byte[r14 + 0x0C]);
+
+					L("RET");
+					jmp(ptr[rip + retnLabel]);
+
+					L(retnLabel);
+					dq(a_target + 0x5);
+
+					L(funcLabel);
+					dq(a_funcAddr);
+				}
+			};
+
+			REL::Relocation<std::uintptr_t> target(REL::Offset(0x1CBAACF));
+			asm_code p{ target.address(), (std::uintptr_t)BSResource::FindArchiveIndex };
+			auto& trampoline = F4SE::GetTrampoline();
+			void* codeBuf = trampoline.allocate(p);
+			trampoline.write_branch<5>(target.address(), codeBuf);
+		}
 	}
 }
