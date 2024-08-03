@@ -1,5 +1,6 @@
 #include "BSResource.h"
 
+#include <shared_mutex>
 #include <xbyak/xbyak.h>
 
 #define	MAX_SIZE	65535
@@ -10,12 +11,15 @@ namespace BSResource {
 	RE::BSResource::ID g_dataFileNameIDs[MAX_SIZE];
 
 	std::unordered_map<ID, std::uint16_t> g_idIndexMap;
+	std::shared_mutex g_idIndexMapMutex;
 
 	void InsertArchiveIndex(const ID& a_id, std::uint32_t a_archIdx) {
+		std::unique_lock<std::shared_mutex> lock(g_idIndexMapMutex);
 		g_idIndexMap[a_id] = static_cast<std::uint16_t>(a_archIdx);
 	}
 
 	std::uint16_t FindArchiveIndex(const ID& a_id) {
+		std::shared_lock<std::shared_mutex> lock(g_idIndexMapMutex);
 		auto it = g_idIndexMap.find(a_id);
 		if (it == g_idIndexMap.end())
 			return static_cast<std::uint16_t>(-1);
@@ -99,16 +103,20 @@ namespace BSResource {
 
 					mov(ptr[rsp + 0x4C], dil);
 
+					push(rax);
 					push(rcx);
 					push(rdx);
+					sub(rsp, 0x18);
 
-					lea(rcx, ptr[rsp + 0x50]);
+					lea(rcx, ptr[rsp + 0x40 + 0x8 + 0x8 + 0x8 + 0x18]);
 					mov(edx, edi);
 					
 					call(ptr[rip + funcLabel]);	
 
+					add(rsp, 0x18);
 					pop(rdx);
 					pop(rcx);
+					pop(rax);
 
 					jmp(ptr[rip + retnLabel]);
 
@@ -137,12 +145,10 @@ namespace BSResource {
 						Xbyak::Label funcLabel;
 
 						push(rcx);
-						sub(rsp, 0x10);
 
 						lea(rcx, ptr[rbp + 0x00000148]);
 						call(ptr[rip + funcLabel]);
 
-						add(rsp, 0x10);
 						pop(rcx);
 
 						cmp(eax, 0xFFFF);
@@ -194,12 +200,10 @@ namespace BSResource {
 						Xbyak::Label funcLabel;
 
 						push(rcx);
-						sub(rsp, 0x10);
 
 						lea(rcx, ptr[rbp + 0x00000148]);
 						call(ptr[rip + funcLabel]);
 
-						add(rsp, 0x10);
 						pop(rcx);
 
 						cmp(eax, 0xFFFF);
@@ -230,12 +234,10 @@ namespace BSResource {
 						Xbyak::Label funcLabel;
 
 						push(rcx);
-						sub(rsp, 0x10);
 
 						lea(rcx, ptr[rsi + 0x00000148]);
 						call(ptr[rip + funcLabel]);
 
-						add(rsp, 0x10);
 						pop(rcx);
 
 						cmp(eax, 0xFFFF);
@@ -299,13 +301,13 @@ namespace BSResource {
 					Xbyak::Label funcLabel;
 
 					push(rcx);
-					sub(rsp, 0x18);
+					sub(rsp, 0x20);
 
 					lea(rcx, ptr[rdi]);
 					mov(edx, ebx);
 					call(ptr[rip + funcLabel]);
 
-					add(rsp, 0x18);
+					add(rsp, 0x20);
 					pop(rcx);
 
 					L("RET");
