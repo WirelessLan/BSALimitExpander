@@ -1,6 +1,5 @@
 #include "BSResource.h"
 
-#include <shared_mutex>
 #include <xbyak/xbyak.h>
 
 #define	MAX_SIZE	65535
@@ -11,15 +10,15 @@ namespace BSResource {
 	RE::BSResource::ID g_dataFileNameIDs[MAX_SIZE];
 
 	std::unordered_map<ID, std::uint16_t> g_idIndexMap;
-	std::shared_mutex g_idIndexMapMutex;
+	RE::BSReadWriteLock g_idIndexMapLock;
 
 	void InsertArchiveIndex(const ID& a_id, std::uint32_t a_archIdx) {
-		std::unique_lock<std::shared_mutex> lock(g_idIndexMapMutex);
+		RE::BSAutoWriteLock lock(g_idIndexMapLock);
 		g_idIndexMap[a_id] = static_cast<std::uint16_t>(a_archIdx);
 	}
 
 	std::uint16_t FindArchiveIndex(const ID& a_id) {
-		std::shared_lock<std::shared_mutex> lock(g_idIndexMapMutex);
+		RE::BSAutoReadLock lock(g_idIndexMapLock);
 		auto it = g_idIndexMap.find(a_id);
 		if (it == g_idIndexMap.end())
 			return static_cast<std::uint16_t>(-1);
@@ -145,10 +144,12 @@ namespace BSResource {
 						Xbyak::Label funcLabel;
 
 						push(rcx);
+						sub(rsp, 0x8);
 
 						lea(rcx, ptr[rbp + 0x00000148]);
 						call(ptr[rip + funcLabel]);
 
+						add(rsp, 0x8);
 						pop(rcx);
 
 						cmp(eax, 0xFFFF);
@@ -200,10 +201,12 @@ namespace BSResource {
 						Xbyak::Label funcLabel;
 
 						push(rcx);
+						sub(rsp, 0x8);
 
 						lea(rcx, ptr[rbp + 0x00000148]);
 						call(ptr[rip + funcLabel]);
 
+						add(rsp, 0x8);
 						pop(rcx);
 
 						cmp(eax, 0xFFFF);
@@ -234,10 +237,12 @@ namespace BSResource {
 						Xbyak::Label funcLabel;
 
 						push(rcx);
+						sub(rsp, 0x8);
 
 						lea(rcx, ptr[rsi + 0x00000148]);
 						call(ptr[rip + funcLabel]);
 
+						add(rsp, 0x8);
 						pop(rcx);
 
 						cmp(eax, 0xFFFF);

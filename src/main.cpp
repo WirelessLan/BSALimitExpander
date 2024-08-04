@@ -48,8 +48,8 @@ extern "C" DLLEXPORT bool F4SEAPI F4SEPlugin_Query(const F4SE::QueryInterface * 
 }
 
 extern "C" DLLEXPORT bool F4SEAPI F4SEPlugin_Load(const F4SE::LoadInterface * a_f4se) {
+	F4SE::AllocTrampoline(static_cast<size_t>(1) << 11u);
 	F4SE::Init(a_f4se);
-	F4SE::AllocTrampoline(static_cast<size_t>(1) << 12u);
 
 	BSResource::Archive2::Hooks_Index_AddDataFile();
 	BSResource::Archive2::Hooks_Index_AddDataFromReader();
