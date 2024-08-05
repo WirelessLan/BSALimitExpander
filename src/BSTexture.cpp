@@ -75,10 +75,14 @@ namespace BSTextureStreamer {
 		}
 
 		std::unordered_map<std::string, std::uint16_t> g_pathIndexMap;
+		RE::BSReadWriteLock g_pathIndexMapLock;
 
 		void InsertPathIndex(const char* a_path, std::uint32_t a_archIdx) {
 			std::string path = ProcessPath(a_path);
-			g_pathIndexMap[path] = static_cast<std::uint16_t>(a_archIdx);
+			{
+				RE::BSAutoWriteLock lock(g_pathIndexMapLock);
+				g_pathIndexMap[path] = static_cast<std::uint16_t>(a_archIdx);
+			}
 		}
 
 		std::uint16_t FindPathIndex(const RE::BSFixedString& a_path) {
@@ -86,16 +90,24 @@ namespace BSTextureStreamer {
 				return static_cast<std::uint16_t>(-1);
 
 			std::string path = ProcessPath(a_path.c_str());
-			auto it = g_pathIndexMap.find(path);
-			if (it != g_pathIndexMap.end())
-				return it->second;
+			{
+				RE::BSAutoReadLock lock(g_pathIndexMapLock);
+				auto it = g_pathIndexMap.find(path);
+				if (it != g_pathIndexMap.end())
+					return it->second;
+			}
 
 			char fullTexturePath[MAX_PATH];
 			std::snprintf(fullTexturePath, sizeof(fullTexturePath), "%s%s", texturesPrefix, path.c_str());
 
 			BSResource::ID id;
 			BSResource::ID::GenerateID(id, fullTexturePath);
-			return BSResource::FindArchiveIndex(id);
+			std::uint16_t index = BSResource::FindArchiveIndex(id);
+			if (index != static_cast<std::uint16_t>(-1)) {
+				RE::BSAutoWriteLock lock(g_pathIndexMapLock);
+				g_pathIndexMap[path] = index;
+			}
+			return index;
 		}
 
 		void Hooks_ProcessEvent() {
@@ -231,14 +243,14 @@ namespace BSTextureStreamer {
 					Xbyak::Label funcLabel;
 
 					push(rcx);
-					sub(rsp, 0x20);
+					sub(rsp, 0x18);
 
 					lea(rcx, ptr[r14 + 0xD0]);
 					call(ptr[rip + funcLabel]);
 
 					mov(edx, eax);
 
-					add(rsp, 0x20);
+					add(rsp, 0x18);
 					pop(rcx);
 
 					cmp(edx, 0xFFFF);
