@@ -81,12 +81,21 @@ namespace BSTextureStreamer {
 			g_pathIndexMap[path] = static_cast<std::uint16_t>(a_archIdx);
 		}
 
-		std::uint16_t FindPathIndex(RE::BSFixedString a_path) {
-			std::string path = ProcessPath(a_path.c_str());
-			auto it = g_pathIndexMap.find(path.c_str());
-			if (it == g_pathIndexMap.end())
+		std::uint16_t FindPathIndex(const RE::BSFixedString& a_path) {
+			if (a_path.empty())
 				return static_cast<std::uint16_t>(-1);
-			return it->second;
+
+			std::string path = ProcessPath(a_path.c_str());
+			auto it = g_pathIndexMap.find(path);
+			if (it != g_pathIndexMap.end())
+				return it->second;
+
+			char fullTexturePath[MAX_PATH];
+			std::snprintf(fullTexturePath, sizeof(fullTexturePath), "%s%s", texturesPrefix, path.c_str());
+
+			BSResource::ID id;
+			BSResource::ID::GenerateID(id, fullTexturePath);
+			return BSResource::FindArchiveIndex(id);
 		}
 
 		void Hooks_ProcessEvent() {
@@ -222,14 +231,14 @@ namespace BSTextureStreamer {
 					Xbyak::Label funcLabel;
 
 					push(rcx);
-					sub(rsp, 0x10);
+					sub(rsp, 0x20);
 
-					lea(rcx, ptr[r14+0xD0]);
+					lea(rcx, ptr[r14 + 0xD0]);
 					call(ptr[rip + funcLabel]);
 
 					mov(edx, eax);
 
-					add(rsp, 0x10);
+					add(rsp, 0x20);
 					pop(rcx);
 
 					cmp(edx, 0xFFFF);

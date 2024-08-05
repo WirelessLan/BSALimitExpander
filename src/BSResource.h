@@ -9,6 +9,12 @@ namespace  BSResource {
 		bool operator==(const ID& other) const {
 			return file == other.file && ext == other.ext && dir == other.dir;
 		}
+
+		static ID& GenerateID(ID& id, const char* path) {
+			using func_t = ID&(*)(ID&, const char*);
+			const REL::Relocation<func_t> func(REL::Offset(0x1B6F0E0));
+			return func(id, path);
+		}
 	};
 
 	void InsertArchiveIndex(const ID& a_id, std::uint32_t a_archIdx);
