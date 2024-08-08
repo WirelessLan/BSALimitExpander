@@ -50,63 +50,75 @@ namespace BSTextureIndex {
 
 namespace BSTextureStreamer {
 	namespace Manager {
-		const char* texturesPrefix = "textures/";
-		const char* dataPrefix = "data/";
-		const size_t texturesPrefixLength = std::char_traits<char>::length(texturesPrefix);
-		const size_t dataPrefixLength = std::char_traits<char>::length(dataPrefix);
+		void ProcessPath(const char* inputPath, char* outputPath) {
+			const char* readPtr = inputPath;
+			char* writePtr = outputPath;
 
-		std::string ProcessPath(const char* path) {
-			std::string result(path);
-			size_t pathLength = result.length();
+			while (*readPtr) {
+				char ch = *readPtr;
+				if (ch == '\\') {
+					*writePtr = '/';
+				}
+				else if (ch >= 'A' && ch <= 'Z') {
+					*writePtr = ch + 32;
+				}
+				else {
+					*writePtr = ch;
+				}
+				readPtr++;
+				writePtr++;
+			}
+			*writePtr = '\0';
 
-			for (size_t i = 0; i < pathLength; ++i) {
-				if (result[i] == '\\')
-					result[i] = '/';
-				result[i] = static_cast<char>(tolower(result[i]));
+			constexpr const char* prefix1 = "data/textures/";
+			constexpr size_t prefix1Len = 14;
+			constexpr const char* prefix2 = "textures/";
+			constexpr size_t prefix2Len = 9;
+
+			readPtr = outputPath;
+
+			if (strncmp(readPtr, prefix1, prefix1Len) == 0) {
+				readPtr += prefix1Len;
+			}
+			else if (strncmp(readPtr, prefix2, prefix2Len) == 0) {
+				readPtr += prefix2Len;
 			}
 
-			if (result.compare(0, dataPrefixLength, dataPrefix) == 0)
-				result.erase(0, dataPrefixLength);
-
-			if (result.compare(0, texturesPrefixLength, texturesPrefix) == 0)
-				result.erase(0, texturesPrefixLength);
-
-			return result;
+			if (readPtr != outputPath) {
+				writePtr = outputPath;
+				while (*readPtr) {
+					*writePtr++ = *readPtr++;
+				}
+				*writePtr = '\0';
+			}
 		}
 
 		std::unordered_map<std::string, std::uint16_t> g_pathIndexMap;
-		RE::BSReadWriteLock g_pathIndexMapLock;
 
 		void InsertPathIndex(const char* a_path, std::uint32_t a_archIdx) {
-			std::string path = ProcessPath(a_path);
-			{
-				RE::BSAutoWriteLock lock(g_pathIndexMapLock);
-				g_pathIndexMap[path] = static_cast<std::uint16_t>(a_archIdx);
-			}
+			char path[MAX_PATH];
+			ProcessPath(a_path, path);
+			g_pathIndexMap[path] = static_cast<std::uint16_t>(a_archIdx);
 		}
 
 		std::uint16_t FindPathIndex(const RE::BSFixedString& a_path) {
 			if (a_path.empty())
 				return static_cast<std::uint16_t>(-1);
 
-			std::string path = ProcessPath(a_path.c_str());
-			{
-				RE::BSAutoReadLock lock(g_pathIndexMapLock);
-				auto it = g_pathIndexMap.find(path);
-				if (it != g_pathIndexMap.end())
-					return it->second;
-			}
+			char path[MAX_PATH];
+			ProcessPath(a_path.c_str(), path);
+			auto it = g_pathIndexMap.find(path);
+			if (it != g_pathIndexMap.end())
+				return it->second;
 
 			char fullTexturePath[MAX_PATH];
-			std::snprintf(fullTexturePath, sizeof(fullTexturePath), "%s%s", texturesPrefix, path.c_str());
+			std::snprintf(fullTexturePath, sizeof(fullTexturePath), "textures/%s", path);
 
 			BSResource::ID id;
 			BSResource::ID::GenerateID(id, fullTexturePath);
 			std::uint16_t index = BSResource::FindArchiveIndex(id);
-			if (index != static_cast<std::uint16_t>(-1)) {
-				RE::BSAutoWriteLock lock(g_pathIndexMapLock);
+			if (index != static_cast<std::uint16_t>(-1))
 				g_pathIndexMap[path] = index;
-			}
 			return index;
 		}
 
@@ -159,14 +171,14 @@ namespace BSTextureStreamer {
 
 						push(rcx);
 						push(rdx);
-						sub(rsp, 0x18);
+						sub(rsp, 0x10);
 
 						mov(rcx, rdx);
 						mov(edx, r12d);
 
 						call(ptr[rip + funcLabel]);
 
-						add(rsp, 0x18);
+						add(rsp, 0x10);
 						pop(rdx);
 						pop(rcx);
 
@@ -269,6 +281,45 @@ namespace BSTextureStreamer {
 			};
 
 			REL::Relocation<std::uintptr_t> target(REL::Offset(0x1CBA3FD));
+			asm_code p{ target.address(), (std::uintptr_t)FindPathIndex };
+			auto& trampoline = F4SE::GetTrampoline();
+			void* codeBuf = trampoline.allocate(p);
+			trampoline.write_branch<5>(target.address(), codeBuf);
+		}
+
+		void Hooks_DecompressStreamedLoad() {
+			struct asm_code : Xbyak::CodeGenerator {
+				asm_code(std::uintptr_t a_target, std::uintptr_t a_funcAddr) {
+					Xbyak::Label retnLabel;
+					Xbyak::Label funcLabel;
+
+					push(rax);
+					sub(rsp, 0x18);
+
+					lea(rcx, ptr[r15 + 0xD0]);
+					call(ptr[rip + funcLabel]);
+
+					mov(ecx, eax);
+
+					add(rsp, 0x18);
+					pop(rax);
+
+					cmp(ecx, 0xFFFF);
+					jne("RET");
+					movzx(ecx, byte[r15 + 0x0C]);
+
+					L("RET");
+					jmp(ptr[rip + retnLabel]);
+
+					L(retnLabel);
+					dq(a_target + 0x5);
+
+					L(funcLabel);
+					dq(a_funcAddr);
+				}
+			};
+
+			REL::Relocation<std::uintptr_t> target(REL::Offset(0x1CB6262));
 			asm_code p{ target.address(), (std::uintptr_t)FindPathIndex };
 			auto& trampoline = F4SE::GetTrampoline();
 			void* codeBuf = trampoline.allocate(p);

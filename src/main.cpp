@@ -63,6 +63,7 @@ extern "C" DLLEXPORT bool F4SEAPI F4SEPlugin_Load(const F4SE::LoadInterface * a_
 	BSTextureStreamer::Manager::Hooks_ProcessEvent();
 	BSTextureStreamer::Manager::Hooks_LoadChunks();
 	BSTextureStreamer::Manager::Hooks_StartStreamingChunks();
+	BSTextureStreamer::Manager::Hooks_DecompressStreamedLoad();
 	BSTextureStreamer::Manager::Hooks_BSGraphics_Renderer_CreateStreamingTexture();
 	BSTextureStreamer::Manager::Hooks_BSGraphics_CreateStreamingDDSTexture();
 	BSTextureStreamer::Manager::Hooks_ThreadProc();
