@@ -56,148 +56,100 @@ namespace BSTextureStreamer {
 
 			while (*readPtr) {
 				char ch = *readPtr;
-				if (ch == '\\') {
+				if (ch == '\\')
 					*writePtr = '/';
-				}
-				else if (ch >= 'A' && ch <= 'Z') {
+				else if (ch >= 'A' && ch <= 'Z')
 					*writePtr = ch + 32;
-				}
-				else {
+				else
 					*writePtr = ch;
-				}
 				readPtr++;
 				writePtr++;
 			}
 			*writePtr = '\0';
 
-			constexpr const char* prefix1 = "data/textures/";
-			constexpr size_t prefix1Len = 14;
-			constexpr const char* prefix2 = "textures/";
-			constexpr size_t prefix2Len = 9;
+			const char* prefix1 = "data/textures/";
+			size_t prefix1Len = std::strlen(prefix1);
+			const char* prefix2 = "textures/";
+			size_t prefix2Len = std::strlen(prefix2);
 
 			readPtr = outputPath;
 
 			if (strncmp(readPtr, prefix1, prefix1Len) == 0) {
-				readPtr += prefix1Len;
+				readPtr += std::strlen("data/");
 			}
 			else if (strncmp(readPtr, prefix2, prefix2Len) == 0) {
-				readPtr += prefix2Len;
+				return;
+			}
+			else {
+				char tempPath[MAX_PATH];
+				strcpy_s(tempPath, outputPath);
+				strcpy_s(outputPath, MAX_PATH, prefix2);
+				strcat_s(outputPath, MAX_PATH, tempPath);
+				return;
 			}
 
-			if (readPtr != outputPath) {
-				writePtr = outputPath;
-				while (*readPtr) {
-					*writePtr++ = *readPtr++;
-				}
-				*writePtr = '\0';
+			writePtr = outputPath;
+			while (*readPtr)
+				*writePtr++ = *readPtr++;
+			*writePtr = '\0';
+		}
+
+		std::uint16_t FindArchiveIndexByTextureRequest(const TextureRequest& a_request) {
+			if (!a_request.texturePath.empty()) {
+				char processedPath[MAX_PATH];
+				ProcessPath(a_request.texturePath.c_str(), processedPath);
+
+				BSResource::ID id;
+				BSResource::ID::GenerateID(id, processedPath);
+
+				return BSResource::FindArchiveIndex(id);
 			}
-		}
 
-		std::unordered_map<std::string, std::uint16_t> g_pathIndexMap;
+			if (a_request.niTexture && a_request.niTexture->rendererTexture && a_request.niTexture->rendererTexture->data) {
+				auto data = a_request.niTexture->rendererTexture->data;
+				return (data->dataFileHighIndex << 8) | data->dataFileIndex;
+			}
 
-		void InsertPathIndex(const char* a_path, std::uint32_t a_archIdx) {
-			char path[MAX_PATH];
-			ProcessPath(a_path, path);
-			g_pathIndexMap[path] = static_cast<std::uint16_t>(a_archIdx);
-		}
-
-		std::uint16_t FindPathIndex(const RE::BSFixedString& a_path) {
-			if (a_path.empty())
-				return static_cast<std::uint16_t>(-1);
-
-			char path[MAX_PATH];
-			ProcessPath(a_path.c_str(), path);
-			auto it = g_pathIndexMap.find(path);
-			if (it != g_pathIndexMap.end())
-				return it->second;
-
-			char fullTexturePath[MAX_PATH];
-			std::snprintf(fullTexturePath, sizeof(fullTexturePath), "textures/%s", path);
-
-			BSResource::ID id;
-			BSResource::ID::GenerateID(id, fullTexturePath);
-			std::uint16_t index = BSResource::FindArchiveIndex(id);
-			if (index != static_cast<std::uint16_t>(-1))
-				g_pathIndexMap[path] = index;
-			return index;
+			RE::BSResource::ID id = a_request.header.nameID;
+			return BSResource::FindArchiveIndex(*reinterpret_cast<BSResource::ID*>(&id));
 		}
 
 		void Hooks_ProcessEvent() {
-			{
-				struct asm_code : Xbyak::CodeGenerator {
-					asm_code(std::uintptr_t a_target, std::uintptr_t a_funcAddr) {
-						Xbyak::Label retnLabel;
-						Xbyak::Label funcLabel;
+			struct asm_code : Xbyak::CodeGenerator {
+				asm_code(std::uintptr_t a_target, std::uintptr_t a_funcAddr) {
+					Xbyak::Label retnLabel;
+					Xbyak::Label funcLabel;
 
-						mov(ptr[rsp + 0x5C], r12b);
+					mov(ptr[rsp + 0x5C], r12b);
 
-						push(rcx);
-						push(rdx);
-						sub(rsp, 0x18);
+					push(rcx);
+					push(rdx);
+					sub(rsp, 0x18);
 
-						lea(rcx, ptr[rsp + 0x50 + 0x8 + 0x8 + 0x18]);
-						mov(edx, r12d);
+					lea(rcx, ptr[rsp + 0x50 + 0x8 + 0x8 + 0x18]);
+					mov(edx, r12d);
 
-						call(ptr[rip + funcLabel]);
+					call(ptr[rip + funcLabel]);
 
-						add(rsp, 0x18);
-						pop(rdx);
-						pop(rcx);
+					add(rsp, 0x18);
+					pop(rdx);
+					pop(rcx);
 
-						jmp(ptr[rip + retnLabel]);
+					jmp(ptr[rip + retnLabel]);
 
-						L(retnLabel);
-						dq(a_target + 0x5);
+					L(retnLabel);
+					dq(a_target + 0x5);
 
-						L(funcLabel);
-						dq(a_funcAddr);
-					}
-				};
+					L(funcLabel);
+					dq(a_funcAddr);
+				}
+			};
 
-				REL::Relocation<std::uintptr_t> target(REL::Offset(0x1CB87F5));
-				asm_code p{ target.address(), (std::uintptr_t)BSResource::InsertArchiveIndex };
-				auto& trampoline = F4SE::GetTrampoline();
-				void* codeBuf = trampoline.allocate(p);
-				trampoline.write_branch<5>(target.address(), codeBuf);
-			}
-			{
-				struct asm_code : Xbyak::CodeGenerator {
-					asm_code(std::uintptr_t a_target, std::uintptr_t a_funcAddr) {
-						Xbyak::Label retnLabel;
-						Xbyak::Label funcLabel;
-
-						lea(rcx, ptr[rbp - 0x38]);
-						mov(rdx, rax);
-
-						push(rcx);
-						push(rdx);
-						sub(rsp, 0x10);
-
-						mov(rcx, rdx);
-						mov(edx, r12d);
-
-						call(ptr[rip + funcLabel]);
-
-						add(rsp, 0x10);
-						pop(rdx);
-						pop(rcx);
-
-						jmp(ptr[rip + retnLabel]);
-
-						L(retnLabel);
-						dq(a_target + 0x7);
-
-						L(funcLabel);
-						dq(a_funcAddr);
-					}
-				};
-
-				REL::Relocation<std::uintptr_t> target(REL::Offset(0x1CB8804));
-				asm_code p{ target.address(), (std::uintptr_t)InsertPathIndex };
-				auto& trampoline = F4SE::GetTrampoline();
-				void* codeBuf = trampoline.allocate(p);
-				trampoline.write_branch<6>(target.address(), codeBuf);
-			}
+			REL::Relocation<std::uintptr_t> target(REL::Offset(0x1CB87F5));
+			asm_code p{ target.address(), (std::uintptr_t)BSResource::InsertArchiveIndex };
+			auto& trampoline = F4SE::GetTrampoline();
+			void* codeBuf = trampoline.allocate(p);
+			trampoline.write_branch<5>(target.address(), codeBuf);
 		}
 
 		void Hooks_LoadChunks() {
@@ -257,7 +209,7 @@ namespace BSTextureStreamer {
 					push(rcx);
 					sub(rsp, 0x18);
 
-					lea(rcx, ptr[r14 + 0xD0]);
+					lea(rcx, ptr[r14]);
 					call(ptr[rip + funcLabel]);
 
 					mov(edx, eax);
@@ -281,7 +233,7 @@ namespace BSTextureStreamer {
 			};
 
 			REL::Relocation<std::uintptr_t> target(REL::Offset(0x1CBA3FD));
-			asm_code p{ target.address(), (std::uintptr_t)FindPathIndex };
+			asm_code p{ target.address(), (std::uintptr_t)FindArchiveIndexByTextureRequest };
 			auto& trampoline = F4SE::GetTrampoline();
 			void* codeBuf = trampoline.allocate(p);
 			trampoline.write_branch<5>(target.address(), codeBuf);
@@ -296,7 +248,7 @@ namespace BSTextureStreamer {
 					push(rax);
 					sub(rsp, 0x18);
 
-					lea(rcx, ptr[r15 + 0xD0]);
+					lea(rcx, ptr[r15]);
 					call(ptr[rip + funcLabel]);
 
 					mov(ecx, eax);
@@ -320,7 +272,7 @@ namespace BSTextureStreamer {
 			};
 
 			REL::Relocation<std::uintptr_t> target(REL::Offset(0x1CB6262));
-			asm_code p{ target.address(), (std::uintptr_t)FindPathIndex };
+			asm_code p{ target.address(), (std::uintptr_t)FindArchiveIndexByTextureRequest };
 			auto& trampoline = F4SE::GetTrampoline();
 			void* codeBuf = trampoline.allocate(p);
 			trampoline.write_branch<5>(target.address(), codeBuf);
@@ -332,36 +284,43 @@ namespace BSTextureStreamer {
 					Xbyak::Label retnLabel;
 					Xbyak::Label funcLabel;
 
+					push(rax);
+					push(rcx);
 					sub(rsp, 0x8);
 
 					lea(rcx, ptr[rsi]);
 					call(ptr[rip + funcLabel]);
 
-					mov(ebx, eax);
+					mov(edx, eax);
 
 					add(rsp, 0x8);
+					pop(rcx);
+					pop(rax);
 
-					cmp(ebx, 0xFFFF);
-					jne("RET");
-					movzx(ebx, byte[rsi + 0x0C]);
+					cmp(edx, 0xFFFF);
+					je("RET");
+
+					mov(byte[rax + 0x4], dl);
+					mov(byte[rax + 0x7], dh);
 
 					L("RET");
-					mov(rcx, rsi);
+					movzx(edx, byte[rcx + 0x3C]);
+					mov(ptr[rax + 0x06], dl);
 					jmp(ptr[rip + retnLabel]);
 
 					L(retnLabel);
-					dq(a_target + 0x7);
+					dq(a_target + 0xD);
 
 					L(funcLabel);
 					dq(a_funcAddr);
 				}
 			};
 
-			REL::Relocation<std::uintptr_t> target(REL::Offset(0x1D0ECE3));
+			REL::Relocation<std::uintptr_t> target(REL::Offset(0x1D0ED1B));
 			asm_code p{ target.address(), (std::uintptr_t)BSResource::FindArchiveIndex };
 			auto& trampoline = F4SE::GetTrampoline();
 			void* codeBuf = trampoline.allocate(p);
-			trampoline.write_branch<6>(target.address(), codeBuf);
+			trampoline.write_branch<5>(target.address(), codeBuf);
 		}
 
 		void Hooks_BSGraphics_CreateStreamingDDSTexture() {
