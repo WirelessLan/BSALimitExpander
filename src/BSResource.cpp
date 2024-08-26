@@ -305,6 +305,7 @@ namespace BSResource {
 					Xbyak::Label retnLabel;
 					Xbyak::Label funcLabel;
 
+					push(rax);
 					push(rcx);
 					sub(rsp, 0x20);
 
@@ -314,6 +315,7 @@ namespace BSResource {
 
 					add(rsp, 0x20);
 					pop(rcx);
+					pop(rax);
 
 					L("RET");
 					mov(ptr[rdi + 0x08], ebx);
