@@ -163,14 +163,14 @@ namespace BSTextureStreamer {
 					push(rdx);
 					push(r10);
 					push(r11);
-					sub(rsp, 0x8);
+					sub(rsp, 0x10);
 
 					lea(rcx, ptr[rdx]);
 					call(ptr[rip + funcLabel]);
 
 					mov(ebx, eax);
 
-					add(rsp, 0x8);
+					add(rsp, 0x10);
 					pop(r11);
 					pop(r10);
 					pop(rdx);
@@ -286,14 +286,14 @@ namespace BSTextureStreamer {
 
 					push(rax);
 					push(rcx);
-					sub(rsp, 0x8);
+					sub(rsp, 0x10);
 
 					lea(rcx, ptr[rsi]);
 					call(ptr[rip + funcLabel]);
 
 					mov(edx, eax);
 
-					add(rsp, 0x8);
+					add(rsp, 0x10);
 					pop(rcx);
 					pop(rax);
 
@@ -330,12 +330,12 @@ namespace BSTextureStreamer {
 					Xbyak::Label funcLabel;
 
 					push(rcx);
-					sub(rsp, 0x8);
+					sub(rsp, 0x10);
 
 					lea(rcx, ptr[rsi]);
 					call(ptr[rip + funcLabel]);
 
-					add(rsp, 0x8);
+					add(rsp, 0x10);
 					pop(rcx);
 
 					cmp(eax, 0xFFFF);
@@ -367,14 +367,14 @@ namespace BSTextureStreamer {
 					Xbyak::Label retnLabel;
 					Xbyak::Label funcLabel;
 
-					sub(rsp, 0x8);
+					sub(rsp, 0x10);
 
 					lea(rcx, ptr[r14]);
 					call(ptr[rip + funcLabel]);
 
 					mov(ecx, eax);
 
-					add(rsp, 0x8);
+					add(rsp, 0x10);
 
 					cmp(ecx, 0xFFFF);
 					jne("RET");

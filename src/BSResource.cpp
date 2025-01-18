@@ -2,14 +2,16 @@
 
 #include <xbyak/xbyak.h>
 
-#define	MAX_SIZE	65535
+#include "ankerl/unordered_dense.h"
+
+constexpr std::uint32_t MaxArchiveCount = 65535;
 
 namespace BSResource {
-	RE::BSTSmartPointer<RE::BSResource::Stream> g_dataFiles[MAX_SIZE];
-	RE::BSTSmartPointer<RE::BSResource::AsyncStream> g_asyncDataFiles[MAX_SIZE];
-	RE::BSResource::ID g_dataFileNameIDs[MAX_SIZE];
+	RE::BSTSmartPointer<RE::BSResource::Stream> g_dataFiles[MaxArchiveCount];
+	RE::BSTSmartPointer<RE::BSResource::AsyncStream> g_asyncDataFiles[MaxArchiveCount];
+	RE::BSResource::ID g_dataFileNameIDs[MaxArchiveCount];
 
-	std::unordered_map<ID, std::uint16_t> g_idIndexMap;
+	ankerl::unordered_dense::map<ID, std::uint16_t, BSResourceIDHash> g_idIndexMap;
 	RE::BSReadWriteLock g_idIndexMapLock;
 
 	void InsertArchiveIndex(const ID& a_id, std::uint32_t a_archIdx) {
@@ -144,12 +146,12 @@ namespace BSResource {
 						Xbyak::Label funcLabel;
 
 						push(rcx);
-						sub(rsp, 0x8);
+						sub(rsp, 0x10);
 
 						lea(rcx, ptr[rbp + 0x00000148]);
 						call(ptr[rip + funcLabel]);
 
-						add(rsp, 0x8);
+						add(rsp, 0x10);
 						pop(rcx);
 
 						cmp(eax, 0xFFFF);
@@ -201,12 +203,12 @@ namespace BSResource {
 						Xbyak::Label funcLabel;
 
 						push(rcx);
-						sub(rsp, 0x8);
+						sub(rsp, 0x10);
 
 						lea(rcx, ptr[rbp + 0x00000148]);
 						call(ptr[rip + funcLabel]);
 
-						add(rsp, 0x8);
+						add(rsp, 0x10);
 						pop(rcx);
 
 						cmp(eax, 0xFFFF);
@@ -237,12 +239,12 @@ namespace BSResource {
 						Xbyak::Label funcLabel;
 
 						push(rcx);
-						sub(rsp, 0x8);
+						sub(rsp, 0x10);
 
 						lea(rcx, ptr[rsi + 0x00000148]);
 						call(ptr[rip + funcLabel]);
 
-						add(rsp, 0x8);
+						add(rsp, 0x10);
 						pop(rcx);
 
 						cmp(eax, 0xFFFF);

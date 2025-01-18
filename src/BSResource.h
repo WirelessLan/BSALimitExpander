@@ -31,13 +31,10 @@ namespace  BSResource {
 	}
 }
 
-namespace std {
-	template <>
-	struct hash<BSResource::ID> {
-		std::size_t operator()(const BSResource::ID& id) const {
-			return ((std::hash<std::uint32_t>()(id.file) ^
-				(std::hash<std::uint32_t>()(id.ext) << 1)) >> 1) ^
-				(std::hash<std::uint32_t>()(id.dir) << 1);
-		}
-	};
-}
+struct BSResourceIDHash {
+	std::size_t operator()(const BSResource::ID& id) const {
+		return ((std::hash<std::uint32_t>()(id.file) ^
+			    (std::hash<std::uint32_t>()(id.ext) << 1)) >> 1) ^
+		        (std::hash<std::uint32_t>()(id.dir) << 1);
+	}
+};

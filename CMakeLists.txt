@@ -31,7 +31,7 @@ add_compile_definitions(
 
 project(
 	BSALimitExpander
-	VERSION 0.3.1
+	VERSION 0.3.2
 	LANGUAGES CXX
 )
 

@@ -1,4 +1,5 @@
 set(SOURCES
+	src/ankerl/unordered_dense.h
 	src/BSResource.h
 	src/BSResource.cpp
 	src/BSTexture.h
