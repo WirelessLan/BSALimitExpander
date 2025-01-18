@@ -4,10 +4,10 @@
 
 #include "BSResource.h"
 
-#define	MAX_SIZE	65535
+constexpr std::uint32_t MaxArchiveCount = 65535;
 
 namespace BSTextureIndex {
-	RE::BSResource::ID g_dataFileNameIDs[MAX_SIZE];
+	RE::BSResource::ID g_dataFileNameIDs[MaxArchiveCount];
 
 	void Overwrites_Instruction() {
 		REL::Relocation<std::uintptr_t> target(REL::Offset(0x1CB89A6));
