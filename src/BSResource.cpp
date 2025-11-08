@@ -11,19 +11,37 @@ namespace BSResource {
 	RE::BSTSmartPointer<RE::BSResource::AsyncStream> g_asyncDataFiles[MaxArchiveCount];
 	RE::BSResource::ID g_dataFileNameIDs[MaxArchiveCount];
 
-	ankerl::unordered_dense::map<ID, std::uint16_t, BSResourceIDHash> g_idIndexMap;
-	RE::BSReadWriteLock g_idIndexMapLock;
+	ankerl::unordered_dense::map<ID, std::uint16_t, BSResourceIDHash> g_generalIndexMap;
+	RE::BSReadWriteLock g_generalIndexLock;
 
-	void InsertArchiveIndex(const ID& a_id, std::uint32_t a_archIdx) {
-		RE::BSAutoWriteLock lock(g_idIndexMapLock);
-		g_idIndexMap[a_id] = static_cast<std::uint16_t>(a_archIdx);
+	ankerl::unordered_dense::map<ID, std::uint16_t, BSResourceIDHash> g_textureIndexMap;
+	RE::BSReadWriteLock g_textureIndexLock;
+
+	void InsertGeneralArchiveIndex(const ID& a_id, std::uint32_t a_archIdx) {
+		RE::BSAutoWriteLock lock(g_generalIndexLock);
+		g_generalIndexMap[a_id] = static_cast<std::uint16_t>(a_archIdx);
 	}
 
-	std::uint16_t FindArchiveIndex(const ID& a_id) {
-		RE::BSAutoReadLock lock(g_idIndexMapLock);
-		auto it = g_idIndexMap.find(a_id);
-		if (it == g_idIndexMap.end())
+	std::uint16_t FindGeneralArchiveIndex(const ID& a_id) {
+		RE::BSAutoReadLock lock(g_generalIndexLock);
+		auto it = g_generalIndexMap.find(a_id);
+		if (it == g_generalIndexMap.end()) {
 			return static_cast<std::uint16_t>(-1);
+		}
+		return it->second;
+	}
+
+	void InsertTextureArchiveIndex(const ID& a_id, std::uint32_t a_archIdx) {
+		RE::BSAutoWriteLock lock(g_textureIndexLock);
+		g_textureIndexMap[a_id] = static_cast<std::uint16_t>(a_archIdx);
+	}
+
+	std::uint16_t FindTextureArchiveIndex(const ID& a_id) {
+		RE::BSAutoReadLock lock(g_textureIndexLock);
+		auto it = g_textureIndexMap.find(a_id);
+		if (it == g_textureIndexMap.end()) {
+			return static_cast<std::uint16_t>(-1);
+		}
 		return it->second;
 	}
 
@@ -130,7 +148,7 @@ namespace BSResource {
 			};
 
 			REL::Relocation<std::uintptr_t> target(REL::Offset(0x1B76AF7));
-			asm_code p{ target.address(), (std::uintptr_t)InsertArchiveIndex };
+			asm_code p{ target.address(), (std::uintptr_t)InsertGeneralArchiveIndex };
 			auto& trampoline = F4SE::GetTrampoline();
 			void* codeBuf = trampoline.allocate(p);
 			trampoline.write_branch<5>(target.address(), codeBuf);
@@ -170,7 +188,7 @@ namespace BSResource {
 				};
 
 				REL::Relocation<std::uintptr_t> target(REL::Offset(0x1B71BB5));
-				asm_code p{ target.address(), (std::uintptr_t)FindArchiveIndex };
+				asm_code p{ target.address(), (std::uintptr_t)FindGeneralArchiveIndex };
 				auto& trampoline = F4SE::GetTrampoline();
 				void* codeBuf = trampoline.allocate(p);
 				trampoline.write_branch<6>(target.address(), codeBuf);
@@ -227,7 +245,7 @@ namespace BSResource {
 				};
 
 				REL::Relocation<std::uintptr_t> target(REL::Offset(0x1B71C3F));
-				asm_code p{ target.address(), (std::uintptr_t)FindArchiveIndex };
+				asm_code p{ target.address(), (std::uintptr_t)FindGeneralArchiveIndex };
 				auto& trampoline = F4SE::GetTrampoline();
 				void* codeBuf = trampoline.allocate(p);
 				trampoline.write_branch<6>(target.address(), codeBuf);
@@ -263,7 +281,7 @@ namespace BSResource {
 				};
 
 				REL::Relocation<std::uintptr_t> target(REL::Offset(0x1B7288C));
-				asm_code p{ target.address(), (std::uintptr_t)FindArchiveIndex };
+				asm_code p{ target.address(), (std::uintptr_t)FindGeneralArchiveIndex };
 				auto& trampoline = F4SE::GetTrampoline();
 				void* codeBuf = trampoline.allocate(p);
 				trampoline.write_branch<6>(target.address(), codeBuf);
@@ -291,14 +309,15 @@ namespace BSResource {
 			}
 		}
 
-		void ReplicatedIDInsert(const ID& a_id, std::uint32_t a_repDir) {
-			std::uint16_t index = FindArchiveIndex(a_id);
-			if (index == static_cast<std::uint16_t>(-1))
+		void InsertReplicatedGeneralID(const ID& a_id, std::uint32_t a_repDir) {
+			std::uint16_t index = FindGeneralArchiveIndex(a_id);
+			if (index == static_cast<std::uint16_t>(-1)) {
 				return;
+			}
 
 			ID repId = a_id;
 			repId.dir = a_repDir;
-			InsertArchiveIndex(repId, index);
+			InsertGeneralArchiveIndex(repId, index);
 		}
 
 		void Hooks_ReplicateDirTo() {
@@ -333,7 +352,7 @@ namespace BSResource {
 			};
 
 			REL::Relocation<std::uintptr_t> target(REL::Offset(0x1B7249D));
-			asm_code p{ target.address(), (std::uintptr_t)ReplicatedIDInsert };
+			asm_code p{ target.address(), (std::uintptr_t)InsertReplicatedGeneralID };
 			auto& trampoline = F4SE::GetTrampoline();
 			void* codeBuf = trampoline.allocate(p);
 			trampoline.write_branch<6>(target.address(), codeBuf);

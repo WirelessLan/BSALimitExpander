@@ -102,7 +102,7 @@ namespace BSTextureStreamer {
 				BSResource::ID id;
 				BSResource::ID::GenerateID(id, processedPath);
 
-				return BSResource::FindArchiveIndex(id);
+				return BSResource::FindTextureArchiveIndex(id);
 			}
 
 			if (a_request.niTexture && a_request.niTexture->rendererTexture && a_request.niTexture->rendererTexture->data) {
@@ -111,7 +111,7 @@ namespace BSTextureStreamer {
 			}
 
 			RE::BSResource::ID id = a_request.header.nameID;
-			return BSResource::FindArchiveIndex(*reinterpret_cast<BSResource::ID*>(&id));
+			return BSResource::FindTextureArchiveIndex(*reinterpret_cast<BSResource::ID*>(&id));
 		}
 
 		void Hooks_ProcessEvent() {
@@ -146,7 +146,7 @@ namespace BSTextureStreamer {
 			};
 
 			REL::Relocation<std::uintptr_t> target(REL::Offset(0x1CB87F5));
-			asm_code p{ target.address(), (std::uintptr_t)BSResource::InsertArchiveIndex };
+			asm_code p{ target.address(), (std::uintptr_t)BSResource::InsertTextureArchiveIndex };
 			auto& trampoline = F4SE::GetTrampoline();
 			void* codeBuf = trampoline.allocate(p);
 			trampoline.write_branch<5>(target.address(), codeBuf);
@@ -194,7 +194,7 @@ namespace BSTextureStreamer {
 			};
 
 			REL::Relocation<std::uintptr_t> target(REL::Offset(0x1CB7C07));
-			asm_code p{ target.address(), (std::uintptr_t)BSResource::FindArchiveIndex };
+			asm_code p{ target.address(), (std::uintptr_t)BSResource::FindTextureArchiveIndex };
 			auto& trampoline = F4SE::GetTrampoline();
 			void* codeBuf = trampoline.allocate(p);
 			trampoline.write_branch<6>(target.address(), codeBuf);
@@ -317,7 +317,7 @@ namespace BSTextureStreamer {
 			};
 
 			REL::Relocation<std::uintptr_t> target(REL::Offset(0x1D0ED1B));
-			asm_code p{ target.address(), (std::uintptr_t)BSResource::FindArchiveIndex };
+			asm_code p{ target.address(), (std::uintptr_t)BSResource::FindTextureArchiveIndex };
 			auto& trampoline = F4SE::GetTrampoline();
 			void* codeBuf = trampoline.allocate(p);
 			trampoline.write_branch<5>(target.address(), codeBuf);
@@ -355,7 +355,7 @@ namespace BSTextureStreamer {
 			};
 
 			REL::Relocation<std::uintptr_t> target(REL::Offset(0x1D37BF5));
-			asm_code p{ target.address(), (std::uintptr_t)BSResource::FindArchiveIndex };
+			asm_code p{ target.address(), (std::uintptr_t)BSResource::FindTextureArchiveIndex };
 			auto& trampoline = F4SE::GetTrampoline();
 			void* codeBuf = trampoline.allocate(p);
 			trampoline.write_branch<5>(target.address(), codeBuf);
@@ -392,7 +392,7 @@ namespace BSTextureStreamer {
 			};
 
 			REL::Relocation<std::uintptr_t> target(REL::Offset(0x1CBAACF));
-			asm_code p{ target.address(), (std::uintptr_t)BSResource::FindArchiveIndex };
+			asm_code p{ target.address(), (std::uintptr_t)BSResource::FindTextureArchiveIndex };
 			auto& trampoline = F4SE::GetTrampoline();
 			void* codeBuf = trampoline.allocate(p);
 			trampoline.write_branch<5>(target.address(), codeBuf);

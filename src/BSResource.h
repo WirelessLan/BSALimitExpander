@@ -17,8 +17,11 @@ namespace  BSResource {
 		}
 	};
 
-	void InsertArchiveIndex(const ID& a_id, std::uint32_t a_archIdx);
-	std::uint16_t FindArchiveIndex(const ID& a_id);
+	void InsertGeneralArchiveIndex(const ID& a_id, std::uint32_t a_archIdx);
+	std::uint16_t FindGeneralArchiveIndex(const ID& a_id);
+
+	void InsertTextureArchiveIndex(const ID& a_id, std::uint32_t a_archIdx);
+	std::uint16_t FindTextureArchiveIndex(const ID& a_id);
 
 	namespace Archive2 {
 		void Hooks_Index_AddDataFile();
