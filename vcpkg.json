@@ -1,6 +1,6 @@
 {
   "name": "bsalimitexpander",
-  "version-string": "0.3.3",
+  "version-string": "0.3.4",
   "license": "MIT",
   "dependencies": [
     "boost-stl-interfaces",
@@ -9,5 +9,5 @@
     "spdlog",
     "xbyak"
   ],
-  "builtin-baseline": "6f29f12e82a8293156836ad81cc9bf5af41fe836"
+  "builtin-baseline": "74e6536215718009aae747d86d84b78376bf9e09"
 }

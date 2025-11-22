@@ -51,47 +51,38 @@ namespace BSTextureIndex {
 namespace BSTextureStreamer {
 	namespace Manager {
 		void ProcessPath(const char* inputPath, char* outputPath) {
-			const char* readPtr = inputPath;
-			char* writePtr = outputPath;
+			char temp[MAX_PATH];
+			size_t i = 0;
 
-			while (*readPtr) {
-				char ch = *readPtr;
-				if (ch == '\\')
-					*writePtr = '/';
-				else if (ch >= 'A' && ch <= 'Z')
-					*writePtr = ch + 32;
-				else
-					*writePtr = ch;
-				readPtr++;
-				writePtr++;
+			for (; inputPath[i] && i < MAX_PATH - 1; i++) {
+				char c = inputPath[i];
+
+				if (c >= 'A' && c <= 'Z') {
+					c += 32;
+				}
+
+				if (c == '/') {
+					c = '\\';
+				}
+
+				temp[i] = c;
 			}
-			*writePtr = '\0';
+			temp[i] = '\0';
 
-			const char* prefix1 = "data/textures/";
-			size_t prefix1Len = std::strlen(prefix1);
-			const char* prefix2 = "textures/";
-			size_t prefix2Len = std::strlen(prefix2);
+			const char* p = temp;
 
-			readPtr = outputPath;
-
-			if (strncmp(readPtr, prefix1, prefix1Len) == 0) {
-				readPtr += std::strlen("data/");
+			const char* dataPos = strstr(p, "data\\");
+			if (dataPos) {
+				p = dataPos + 5;
 			}
-			else if (strncmp(readPtr, prefix2, prefix2Len) == 0) {
-				return;
-			}
-			else {
-				char tempPath[MAX_PATH];
-				strcpy_s(tempPath, outputPath);
-				strcpy_s(outputPath, MAX_PATH, prefix2);
-				strcat_s(outputPath, MAX_PATH, tempPath);
+
+			if (strncmp(p, "textures\\", 9) == 0) {
+				strcpy_s(outputPath, MAX_PATH, p);
 				return;
 			}
 
-			writePtr = outputPath;
-			while (*readPtr)
-				*writePtr++ = *readPtr++;
-			*writePtr = '\0';
+			strcpy_s(outputPath, MAX_PATH, "textures\\");
+			strcat_s(outputPath, MAX_PATH, p);
 		}
 
 		std::uint16_t FindArchiveIndexByTextureRequest(const TextureRequest& a_request) {
